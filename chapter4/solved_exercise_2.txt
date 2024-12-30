@@ -1,0 +1,2 @@
+For solved exercise 2 I should sort the list of licenses in descending order of the license
+growth rate. That would provide the least total cost of obtaining the whole set of licences.
