@@ -15,6 +15,15 @@ type Segment struct {
 You are given a set S of n segments on the line, where Si ranges from Li to Ri.  Give an effecient
 algorithm to select the fewest number of segments whose union completely covers the
 interval 0 to m.
+
+Answer:
+1. Sort the list by left point.
+2. Iterate over the list.
+3. Always choose the first segment and add it to result.
+4. Start looping at 2nd element in array.
+4. If next segment is not completely enclosed by previous one in result add it to result.
+5. Repeat this process until you reach end of criteria.
+6. return result
 */
 func TestFewestSegments(t *testing.T) {
 
@@ -38,7 +47,7 @@ func TestFewestSegments(t *testing.T) {
 		return false
 	}
 
-	allSegments := []Segment{{0, 8}, {2, 10}, {4, 12},
+	allSegments := []Segment{{2, 10}, {4, 12}, {0, 8},
 		{8, 11}, {10, 13}, {16, 20}}
 	sorting.QuickSort(allSegments, lt)
 
@@ -46,7 +55,7 @@ func TestFewestSegments(t *testing.T) {
 	if !a {
 		t.Errorf("Should have found gap")
 	}
-	allSegments2 := []Segment{{0, 3}, {2, 10}, {5, 12}}
+	allSegments2 := []Segment{{2, 10}, {0, 3}, {5, 12}}
 	sorting.QuickSort(allSegments2, lt)
 	a = isThereAGap(allSegments2, 9)
 	if a {
