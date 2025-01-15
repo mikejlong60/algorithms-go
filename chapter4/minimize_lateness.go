@@ -2,7 +2,7 @@ package chapter4
 
 import (
 	"fmt"
-	"github.com/mikejlong60/algorithms/chapter5"
+	"github.com/mikejlong60/algorithms-go/chapter5"
 )
 
 type Process struct {

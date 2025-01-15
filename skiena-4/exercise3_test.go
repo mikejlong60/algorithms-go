@@ -3,7 +3,7 @@ package skiena_4
 import (
 	"github.com/greymatter-io/golangz/arrays"
 	"github.com/greymatter-io/golangz/propcheck"
-	"github.com/mikejlong60/algorithms/chapter5"
+	"github.com/mikejlong60/algorithms-go/chapter5"
 	"math"
 	"testing"
 )

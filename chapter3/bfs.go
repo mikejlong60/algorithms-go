@@ -67,7 +67,7 @@ func BFSearch(graph map[int]*Node, rootId int) ([][]Edge, bool, int) {
 				if !alreadySeen {
 					pendingLayer = append(pendingLayer, Edge{U: k.V, V: m.Id})
 					layersLookup[m.Id] = NodeLayerTuple{Id: m.Id, Layer: i + 1}
-				} else { //Don't add it since we already know about this Node. But DO see if its a cycle.
+				} else {                 //Don't add it since we already know about this Node. But DO see if its a cycle.
 					if !graphHasACycle { //Can only set this value to true one time
 						graphHasACycle = hasCycle(m.Id, i, layersLookup)
 					}
@@ -176,25 +176,25 @@ func UndirectedGraphGen(lower, upperExc int) func(propcheck.SimpleRNG) (propchec
 }
 
 func EvenNumberOfNodesGen(lower, upperExc int) func(propcheck.SimpleRNG) (map[int]*Node, propcheck.SimpleRNG) {
-	return func(rng propcheck.SimpleRNG) (map[int]*Node, propcheck.SimpleRNG) {
-		nodeEq := func(l, r *Node) bool {
-			if l.Id == r.Id {
-				return true
-			} else {
-				return false
-			}
+	nodeEq := func(l, r *Node) bool {
+		if l.Id == r.Id {
+			return true
+		} else {
+			return false
 		}
+	}
+	nodeLt := func(l, r *Node) bool {
+		if l.Id < r.Id {
+			return true
+		} else {
+			return false
+		}
+	}
+
+	return func(rng propcheck.SimpleRNG) (map[int]*Node, propcheck.SimpleRNG) {
 
 		eq := func(l, r int) bool {
 			if l == r {
-				return true
-			} else {
-				return false
-			}
-		}
-
-		nodeLt := func(l, r *Node) bool {
-			if l.Id < r.Id {
 				return true
 			} else {
 				return false
@@ -238,7 +238,7 @@ func EvenNumberOfNodesGen(lower, upperExc int) func(propcheck.SimpleRNG) (map[in
 					if len(connectionsSet) >= len(nodes)/2 {
 						break
 					} else {
-						connectionsSet = sets.SetUnion(connectionsSet, []*Node{y})
+						connectionsSet = sets.SetUnion(connectionsSet, nodeLt, eq, []*Node{y})
 					}
 				}
 				graph[j.Id].Connections = connectionsSet

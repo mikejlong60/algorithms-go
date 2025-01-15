@@ -1,7 +1,7 @@
 package chapter4
 
 import (
-	"github.com/mikejlong60/algorithms/chapter5"
+	"github.com/mikejlong60/algorithms-go/chapter5"
 )
 
 func ScheduleAll(r []*TimeSlot) [][]*TimeSlot { //Each row of the returned array is the schedule for a single resource(say a thread)
