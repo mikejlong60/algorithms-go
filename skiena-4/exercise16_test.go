@@ -50,7 +50,7 @@ func TestSmallestUnion(t *testing.T) {
 					result = append(result, allSegments[i])
 				}
 				if allSegments[i].r > criteriaLimit {
-					break
+					return result
 				}
 			}
 		}
