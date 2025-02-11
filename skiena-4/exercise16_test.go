@@ -11,8 +11,8 @@ type Segment struct {
 	r int
 }
 
-// Determine in Big O(N) the maximum number of Citations for authors.  It must be how group-by is implemented in a database.
-/**
+/*
+*
 You are given a set S of n segments on the line, where Si ranges from Li to Ri.  Give an efficient
 algorithm to select the fewest number of segments whose union completely covers the
 interval 0 to m.
