@@ -2,6 +2,7 @@ package skiena_4
 
 import (
 	"fmt"
+	"github.com/greymatter-io/golangz/arrays"
 	"github.com/greymatter-io/golangz/propcheck"
 	"github.com/greymatter-io/golangz/sorting"
 	"github.com/hashicorp/go-multierror"
@@ -10,7 +11,7 @@ import (
 	"time"
 )
 
-// Devise an algorithm for finding the kth smallest elements of an unsorted et of n integers in
+// Devise an algorithm for finding the k smallest elements of an unsorted et of n integers in
 // O(n + k(log n))
 
 //Naive answer. Sort and choose the elements below the kth element from the array
@@ -44,15 +45,15 @@ func ParentIdx(i int) int {
 	}
 }
 
-// Definition of almost-a-heap. Only one node in the tree has a value less than it's parent as per the lt function and that
+// Definition of almost-a-heap. Only one node in the tree has a value less than it's parent as per the gt function and that
 // node is at the bottom rung of the heap.
-// Definition of a heap.  Every node in the tree has a greater value than it's parent as per the lt function.
+// Definition of a heap.  Every node in the tree has a greater value than it's parent as per the gt function.
 // This is a not pure function
 // Parameters:
 //
-//	h - the generic heap object containing the heap(represented as a slice) and the reverse-lookup map.
+//	h - the heap object containing the heap(represented as a slice).
 //	i int - the index into the heap of the element you want to move up. Array indices start with the number zero.
-//	lt func(l, r A) bool - A predicate function that determines whether the left A element is less than the right A element.
+//	gt func(l, r A) bool - A predicate function that determines whether the left A element is less than the right A element.
 //
 // Returns - The modified heap that has the i'th element in its proper position in the heap
 // Performance - O(log N) assuming that the array is almost-a-heap with the key: heap(i) too small.
@@ -62,7 +63,7 @@ func heapifyUp(h Heap, i int) Heap {
 	}
 	if i > 0 {
 		j := ParentIdx(i)
-		if lt(h.hp[i], h.hp[j]) {
+		if gt(h.hp[i], h.hp[j]) {
 			//Swap elements
 			temp := h.hp[i]
 			temp2 := h.hp[j]
@@ -78,9 +79,9 @@ func heapifyUp(h Heap, i int) Heap {
 // This is not a pure function because it modifies the array each time.
 // Parameters:
 //
-//	h - the generic heap object containing the heap(represented as a slice) and the reverse-lookup map.
+//	h - the heap object containing the heap(represented as a slice).
 //	i int - the index into the heap of the element you want to move up. Array indices start with the number zero.
-//	lt func(l, r A) bool - A predicate function that determines whether the left A element is less than the right A element.
+//	gt func(l, r A) bool - A predicate function that determines whether the left A element is less than the right A element.
 //
 // Returns - The modified heap that has the i'th element in its proper position in the heap
 // Performance - O(log N) assuming that the array is almost-a-heap with the key: heap(i) too big.
@@ -97,7 +98,7 @@ func heapifyDown(h Heap, i int) Heap {
 		leftVal := h.hp[left]
 		if right < n {
 			rightVal := h.hp[right]
-			if lt(leftVal, rightVal) {
+			if gt(leftVal, rightVal) {
 				j = left
 			} else {
 				j = right
@@ -108,7 +109,7 @@ func heapifyDown(h Heap, i int) Heap {
 	} else if (2*i)+1 == n {
 		j = (2 * i) + 1
 	}
-	if j < n && lt(h.hp[j], h.hp[i]) {
+	if j < n && gt(h.hp[j], h.hp[i]) {
 		//Swap elements
 		temp := h.hp[i]
 		temp2 := h.hp[j]
@@ -122,7 +123,7 @@ func heapifyDown(h Heap, i int) Heap {
 // This is a pure function.
 // Parameters:
 //
-//	h - the generic heap object containing the heap(represented as a slice) and the reverse-lookup map.
+//	h - the heap object containing the heap(represented as a slice).
 //
 // Returns -the minimum element in the given heap without removing it. O(1)
 // Performance - O(1)
@@ -139,9 +140,9 @@ func FindMin(h Heap) (int, error) {
 //
 // Parameters:
 //
-//	h - the generic heap object containing the heap(represented as a slice) and the reverse-lookup map.
+//	h - the heap object containing the heap(represented as a slice).
 //	a  A - the element you want to insert into the heap
-//	lt func(l, r A) bool - A predicate function that determines whether or not the left A element is less than the right A element.
+//	gt func(l, r A) bool - A predicate function that determines whether or not the left A element is less than the right A element.
 //
 // Returns - The original heap (as a slice) that has the given element in its proper position
 // Performance - O(log N)
@@ -157,7 +158,7 @@ func HeapInsert(h Heap, a int) Heap {
 
 // Determines if given heap is empty.
 //
-//	h - the generic heap object containing the heap(represented as a slice) and the reverse-lookup map.
+//	h - the heap object containing the heap(represented as a slice).
 //
 // Returns - Whether or not the heap is empty
 // Performance - O(1)
@@ -172,9 +173,9 @@ func Empty(h Heap) bool {
 // Deletes an element from the given heap. This is not a pure function.
 // Parameters:
 //
-//	h - the generic heap object containing the heap(represented as a slice) and the reverse-lookup map.
+//	h - the heap object containing the heap(represented as a slice).
 //	i int - the index into the heap of the element you want to delete. Array indices start with the number zero.
-//	lt func(l, r A) bool - A predicate function that determines whether or not the left A element is less than the right A element.
+//	gt func(l, r A) bool - A predicate function that determines whether or not the left A element is less than the right A element.
 //
 // Returns - The original heap that has the given element in its proper position.
 //
@@ -206,16 +207,15 @@ func HeapDelete(h Heap, i int) (Heap, error) {
 	}
 
 	parent := ParentIdx(i)
-	if parent > 0 && lt(h.hp[i], h.hp[parent]) {
+	if parent > 0 && gt(h.hp[i], h.hp[parent]) {
 		return heapifyUp(h, i), nil
 	} else {
 		return heapifyDown(h, i), nil
 	}
 }
 
-// ///////////////
-func lt(l, r int) bool {
-	if l < r {
+func gt(l, r int) bool {
+	if l > r {
 		return true
 	} else {
 		return false
@@ -230,11 +230,6 @@ func eq(l, r int) bool {
 	}
 }
 
-func insert(p []int) Heap {
-	xss := insertIntoHeap(p)
-	return xss
-}
-
 func insertIntoHeap(xss []int) Heap {
 	var h = New()
 	for _, x := range xss {
@@ -247,7 +242,7 @@ func parentIsLessThanOrEqual(h Heap, lastIdx int) error {
 	var cIdx = lastIdx
 	var errors error
 	for pIdx >= 0 {
-		if !lt(h.hp[pIdx], h.hp[cIdx]) {
+		if !gt(h.hp[pIdx], h.hp[cIdx]) {
 			errors = multierror.Append(errors, fmt.Errorf("parent:%v value was not less than or equal to child's:%v\n", h.hp[pIdx], h.hp[cIdx]))
 		}
 		cIdx = pIdx
@@ -283,7 +278,7 @@ func validateHeapMin(p Heap) (bool, error) {
 	var errors error
 	var sorted = make([]int, len(p.hp))
 	copy(sorted, p.hp)
-	sorting.QuickSort(sorted, lt)
+	sorting.QuickSort(sorted, gt)
 	if !minimumCorrectValue(p, sorted) {
 		errors = multierror.Append(errors, fmt.Errorf("FindMin should have returned:%v", sorted[0]))
 	}
@@ -300,9 +295,47 @@ func TestHeapInsertWithEmptyHeap(t *testing.T) {
 
 	prop := propcheck.ForAll(g,
 		"Validate heapifyUp  \n",
-		insert,
+		insertIntoHeap,
 		validateIsAHeap, validateHeapMin,
 	)
 	result := prop.Run(propcheck.RunParms{100, rng})
 	propcheck.ExpectSuccess[[]int](t, result)
+}
+
+func TestFindKSmallestElements(t *testing.T) {
+
+	findKSmallestElements := func(xss []int, k int) Heap {
+		heapSize := 0
+		var h = New()
+		for _, x := range xss {
+			if heapSize > k {
+				h, _ = HeapDelete(h, 0)
+				heapSize--
+			}
+			h = HeapInsert(h, x)
+			heapSize++
+		}
+		h, _ = HeapDelete(h, 0) //delete last extra element
+		return h
+	}
+
+	a := []int{3, 2, 1, 13, 5, 6, 7, 9, 11}
+	actual := findKSmallestElements(a, 3)
+	expected := []int{3, 2, 1}
+	if !arrays.ArrayEquality(actual.hp, expected, eq) {
+		t.Errorf("Arrays not equal")
+	}
+
+	actual = findKSmallestElements(a, 4)
+	expected = []int{5, 3, 1, 2}
+	if !arrays.ArrayEquality(actual.hp, expected, eq) {
+		t.Errorf("Arrays not equal")
+	}
+	a = []int{3, 2, 1, 21, 12, 8, 13, 5, 6, 7, 9, 11}
+	actual = findKSmallestElements(a, 4)
+	expected = []int{5, 3, 1, 2}
+	if !arrays.ArrayEquality(actual.hp, expected, eq) {
+		t.Errorf("Arrays not equal")
+	}
+
 }
