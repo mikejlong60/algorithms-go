@@ -127,6 +127,8 @@ func heapifyDown(h Heap, i int) Heap {
 //
 // Returns -the minimum element in the given heap without removing it. O(1)
 // Performance - O(1)
+// This is a hack but 0 is the default value for ints.
+// TODO make it min int instead.
 func FindMin(h Heap) (int, error) {
 	if len(h.hp) == 0 {
 		return -1, fmt.Errorf("heap is empty so findMin is therefore irrelevant")
@@ -190,16 +192,10 @@ func HeapDelete(h Heap, i int) (Heap, error) {
 
 	//Delete last element and return. No need to move anything around.
 	if i == len(h.hp)-1 {
-		//k := h.bExtractor(h.hp[i])
-		//delete(h.position, k)
 		h.hp = h.hp[0 : len(h.hp)-1]
 		return h, nil
 	}
-	//k := h.bExtractor(h.hp[i])
-	//delete(h.position, k)
 	h.hp[i] = h.hp[len(h.hp)-1]
-	//j := h.bExtractor(h.hp[i])
-	//h.position[j] = i
 	h.hp = h.hp[0 : len(h.hp)-1]
 
 	if len(h.hp) == 1 {
@@ -319,15 +315,15 @@ func TestFindKSmallestElements(t *testing.T) {
 		return h
 	}
 
-	a := []int{3, 2, 1, 13, 5, 6, 7, 9, 11}
+	a := []int{3, 2, 1, 13, 5, 6, 7, 9, 11, -3}
 	actual := findKSmallestElements(a, 3)
-	expected := []int{3, 2, 1}
+	expected := []int{2, -3, 1}
 	if !arrays.ArrayEquality(actual.hp, expected, eq) {
 		t.Errorf("Arrays not equal")
 	}
 
 	actual = findKSmallestElements(a, 4)
-	expected = []int{5, 3, 1, 2}
+	expected = []int{3, 2, 1, -3}
 	if !arrays.ArrayEquality(actual.hp, expected, eq) {
 		t.Errorf("Arrays not equal")
 	}
