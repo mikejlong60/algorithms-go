@@ -7,6 +7,7 @@ import (
 	"github.com/greymatter-io/golangz/sorting"
 	"github.com/hashicorp/go-multierror"
 	log "github.com/sirupsen/logrus"
+	"math"
 	"testing"
 	"time"
 )
@@ -134,6 +135,18 @@ func FindMin(h Heap) (int, error) {
 		return -1, fmt.Errorf("heap is empty so findMin is therefore irrelevant")
 	}
 	return h.hp[0], nil
+}
+
+func Pop(h Heap) (int, error) {
+	x, er := FindMin(h)
+	if er != nil {
+		return math.MinInt, er
+	}
+	_, er = HeapDelete(h, 0)
+	if er != nil {
+		return math.MinInt, er
+	}
+	return x, nil
 }
 
 // Inserts the given element into the given heap and returns the modified heap.
