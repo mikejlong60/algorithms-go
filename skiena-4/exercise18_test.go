@@ -5,18 +5,8 @@ import (
 	"testing"
 )
 
-// Devise an algorithm for finding the k smallest elements of an unsorted et of n integers in
-// O(n + k(log n))
-
-//Naive answer. Sort and choose the elements below the kth element from the array
-//but cost is O(n log n) instead of O(n + k(log n).
-
-//Right answer:
-// Use your heap and iterate through the array of ints, pushing each element on to a heap with the
-// heap being a min heap(a single function governs whether its a min or max heap).  Keep track
-// of the size of the heap with a customization to your heap implementation.
-// Every time the size of the heap exceeds k, delete the max element from the heap.
-// You will end up with the kth smallest elements in the heap.
+// Give an O(n log k) algorithm that merges k sorted lists with a total of n elements in one
+// sorted list.
 
 func insertIntoHeap2(xss []int, h Heap) Heap {
 	for _, x := range xss {
@@ -35,8 +25,9 @@ func TestMergeKSortedArrays(t *testing.T) {
 		h = insertIntoHeap2(x, h)
 	}
 	var actual = make([]int, 33)
+	var x int
 	for i := 0; i < len(h.hp)-1; i++ {
-		x, _ := Pop(h)
+		x, h, _ = Pop(h)
 		actual[i] = x
 	}
 	expected := []int{2, -3, 1}

@@ -137,16 +137,16 @@ func FindMin(h Heap) (int, error) {
 	return h.hp[0], nil
 }
 
-func Pop(h Heap) (int, error) {
+func Pop(h Heap) (int, Heap, error) {
 	x, er := FindMin(h)
 	if er != nil {
-		return math.MinInt, er
+		return math.MinInt, h, er
 	}
-	_, er = HeapDelete(h, 0)
+	h, er = HeapDelete(h, 0)
 	if er != nil {
-		return math.MinInt, er
+		return math.MinInt, h, er
 	}
-	return x, nil
+	return x, h, nil
 }
 
 // Inserts the given element into the given heap and returns the modified heap.
