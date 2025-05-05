@@ -2,12 +2,13 @@ package skiena_4
 
 import (
 	"fmt"
+	"github.com/greymatter-io/golangz/arrays"
 	"testing"
 )
 
 /**  Order a random array filled with red, white and blue marbles in red,white,blue order.
  You can only look at the color and swap them.
- And do it in linear rime O(n)
+ And do it in linear time O(n)
 Algorithm:
 Start at the first element.
   If it is Red, move to next element
@@ -32,15 +33,13 @@ var steps = 0
 func orderAsRedWhiteAndBlue(xs []string, i int, currentColor string) int {
 	var j = 0
 	for ; i < len(xs); i++ {
-		if j == len(xs) { //never reached
-			return i
+		if j == len(xs) {
+			return i - 1
 		}
 		steps++
-		//j := i + 1
 		if xs[i] == currentColor {
 			continue
 		} else {
-			//matchedCurrentColor := false
 			j = i
 			for ; j < len(xs); j++ {
 				steps++
@@ -52,25 +51,39 @@ func orderAsRedWhiteAndBlue(xs []string, i int, currentColor string) int {
 					}
 				}
 			}
-			//if matchedCurrentColor {
-			//	return i
-			//}
 		}
 	}
 	return i
 }
 
 func TestOrderAsRedWhiteAndBlue(t *testing.T) {
+
+	eq := func(l, r string) bool {
+		if l == r {
+			return true
+		}
+		return false
+	}
+
 	xs := []string{"r", "r", "b", "r", "w", "b", "r", "r", "b", "r", "w", "b"}
 
 	i := orderAsRedWhiteAndBlue(xs, 0, "r")
-	orderAsRedWhiteAndBlue(xs, i+1, "w")
+	orderAsRedWhiteAndBlue(xs, i, "w")
 	fmt.Println(steps)
 	fmt.Println(xs)
-	//expected := []string{"r","r","r","r","w","w","b","b"}
+	expected := []string{"r", "r", "r", "r", "r", "r", "w", "w", "b", "b", "b", "b"}
 
-	//if expected != actual {
-	//	t.Errorf("Expected:[%v], Actual:[%v]", expected, actual)
-	//}
+	if !arrays.ArrayEquality(xs, expected, eq) {
+		t.Errorf("Expected:[%v], Actual:[%v]", expected, xs)
+	}
 
+	ys := []string{"r", "w", "b", "b", "w", "b", "r"}
+	steps = 0
+	k := orderAsRedWhiteAndBlue(ys, 0, "r")
+	orderAsRedWhiteAndBlue(ys, k, "w")
+	fmt.Println(steps)
+	expectedys := []string{"r", "r", "w", "w", "b", "b", "b"}
+	if !arrays.ArrayEquality(ys, expectedys, eq) {
+		t.Errorf("Expected:[%v], Actual:[%v]", expectedys, ys)
+	}
 }
