@@ -30,6 +30,28 @@ Start at the first element.
 
 var steps = 0
 
+//From Chat(Dijkstra) after I finished 1st implementation
+func sortColors(xs []string) {
+	low, mid, high := 0, 0, len(xs)-1
+
+	for mid <= high {
+		steps++
+		switch xs[mid] {
+		case "r":
+			xs[low], xs[mid] = xs[mid], xs[low]
+			low++
+			mid++
+		case "w":
+			mid++
+		case "b":
+			xs[mid], xs[high] = xs[high], xs[mid]
+			high--
+		default:
+			panic("Invalid color in array")
+		}
+	}
+}
+
 func orderAsRedWhiteAndBlue(xs []string, i int, currentColor string) int {
 	var j = 0
 	for ; i < len(xs); i++ {
@@ -44,7 +66,6 @@ func orderAsRedWhiteAndBlue(xs []string, i int, currentColor string) int {
 			for ; j < len(xs); j++ {
 				steps++
 				if xs[j] == currentColor {
-					//matchedCurrentColor = true
 					xs[i], xs[j] = xs[j], xs[i]
 					if j < len(xs) {
 						break
@@ -56,6 +77,11 @@ func orderAsRedWhiteAndBlue(xs []string, i int, currentColor string) int {
 	return i
 }
 
+func OrderAsRedWhiteAndBlue(xs []string) {
+	i := orderAsRedWhiteAndBlue(xs, 0, "r")
+	orderAsRedWhiteAndBlue(xs, i, "w")
+	return
+}
 func TestOrderAsRedWhiteAndBlue(t *testing.T) {
 
 	eq := func(l, r string) bool {
@@ -67,8 +93,7 @@ func TestOrderAsRedWhiteAndBlue(t *testing.T) {
 
 	xs := []string{"r", "r", "b", "r", "w", "b", "r", "r", "b", "r", "w", "b"}
 
-	i := orderAsRedWhiteAndBlue(xs, 0, "r")
-	orderAsRedWhiteAndBlue(xs, i, "w")
+	OrderAsRedWhiteAndBlue(xs)
 	fmt.Println(steps)
 	fmt.Println(xs)
 	expected := []string{"r", "r", "r", "r", "r", "r", "w", "w", "b", "b", "b", "b"}
@@ -77,13 +102,62 @@ func TestOrderAsRedWhiteAndBlue(t *testing.T) {
 		t.Errorf("Expected:[%v], Actual:[%v]", expected, xs)
 	}
 
-	ys := []string{"r", "w", "b", "b", "w", "b", "r"}
+	xs = []string{"r", "w", "b", "b", "w", "b", "r"}
 	steps = 0
-	k := orderAsRedWhiteAndBlue(ys, 0, "r")
-	orderAsRedWhiteAndBlue(ys, k, "w")
+	OrderAsRedWhiteAndBlue(xs)
 	fmt.Println(steps)
-	expectedys := []string{"r", "r", "w", "w", "b", "b", "b"}
-	if !arrays.ArrayEquality(ys, expectedys, eq) {
-		t.Errorf("Expected:[%v], Actual:[%v]", expectedys, ys)
+	expected = []string{"r", "r", "w", "w", "b", "b", "b"}
+	if !arrays.ArrayEquality(xs, expected, eq) {
+		t.Errorf("Expected:[%v], Actual:[%v]", expected, xs)
 	}
+
+	xs = []string{"w", "w", "w", "w", "w", "w", "b", "w", "w", "w", "w", "w", "r", "r", "b", "r", "w", "b", "r", "r", "b", "r", "w", "b"}
+	steps = 0
+	OrderAsRedWhiteAndBlue(xs)
+	fmt.Println(steps)
+	expected = []string{"r", "r", "r", "r", "r", "r", "w", "w", "w", "w", "w", "w", "w", "w", "w", "w", "w", "w", "w", "b", "b", "b", "b", "b"}
+	if !arrays.ArrayEquality(xs, expected, eq) {
+		t.Errorf("Expected:[%v], Actual:[%v]", expected, xs)
+	}
+
+}
+
+func TestSortColors(t *testing.T) {
+
+	eq := func(l, r string) bool {
+		if l == r {
+			return true
+		}
+		return false
+	}
+
+	xs := []string{"r", "r", "b", "r", "w", "b", "r", "r", "b", "r", "w", "b"}
+
+	sortColors(xs)
+	fmt.Println(steps)
+	fmt.Println(xs)
+	expected := []string{"r", "r", "r", "r", "r", "r", "w", "w", "b", "b", "b", "b"}
+
+	if !arrays.ArrayEquality(xs, expected, eq) {
+		t.Errorf("Expected:[%v], Actual:[%v]", expected, xs)
+	}
+
+	xs = []string{"r", "w", "b", "b", "w", "b", "r"}
+	steps = 0
+	sortColors(xs)
+	fmt.Println(steps)
+	expected = []string{"r", "r", "w", "w", "b", "b", "b"}
+	if !arrays.ArrayEquality(xs, expected, eq) {
+		t.Errorf("Expected:[%v], Actual:[%v]", expected, xs)
+	}
+
+	xs = []string{"w", "w", "w", "w", "w", "w", "b", "w", "w", "w", "w", "w", "r", "r", "b", "r", "w", "b", "r", "r", "b", "r", "w", "b"}
+	steps = 0
+	sortColors(xs)
+	fmt.Println(steps)
+	expected = []string{"r", "r", "r", "r", "r", "r", "w", "w", "w", "w", "w", "w", "w", "w", "w", "w", "w", "w", "w", "b", "b", "b", "b", "b"}
+	if !arrays.ArrayEquality(xs, expected, eq) {
+		t.Errorf("Expected:[%v], Actual:[%v]", expected, xs)
+	}
+
 }
