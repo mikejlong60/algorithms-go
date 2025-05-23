@@ -30,7 +30,7 @@ Start at the first element.
 
 var steps = 0
 
-//From Chat(Dijkstra) after I finished 1st implementation
+// From Chat(Dijkstra) after I finished 1st implementation
 func sortColors(xs []string) {
 	low, mid, high := 0, 0, len(xs)-1
 
