@@ -12,8 +12,13 @@ Mergesort-divide in half
 3. Now there are 8 arrays after the merge operation and return the ordered array to above layer. That merge is O(N)
 4. Now there are 4 arrays. Return those 4 arrays to above layer. That array merge is O(n).
 5. Now there are 2 arrays  That array merge is O(n).
-6. Return the sorted array. 
-
+6. Return the sorted array.
+Cost of this sort is O(log^3 of n + (n/3 * n log^3 of n factorial))
+   Same as standard merge sort — the base of the logarithm changes (from 2 to 3), but asymptotically, it’s still
+   log
+   ⁡
+   𝑛
+   logn.
 
 Mergesort-divide in thirds                                   
 1.Split array in thirds.  You have 3 layers.
@@ -22,3 +27,6 @@ Mergesort-divide in thirds
 3. Now there are 6 arrays after the merge operation and return the ordered array to above layer. That merge is O(N)
 4. Now there are 3 arrays. Return those 4 arrays to above layer. That array merge is O(n).
 5. Return the sorted array. 
+
+Cost of merge is O(log^3 n)
+Total time: proportional to 𝑁
