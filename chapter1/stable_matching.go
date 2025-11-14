@@ -2,17 +2,18 @@ package chapter1
 
 import (
 	"fmt"
+
 	"github.com/greymatter-io/golangz/linked_list"
 	"github.com/greymatter-io/golangz/propcheck"
 )
 
 //This algorithm accommodates both weak and strong instabilities.
 
-//Definition of Instability - For a given married woman, does a man exist that she prefers over her current husband who also prefers her over his current wife.
-//Given that definition of instability there can be no lying about preferences for a woman because a man can only propose once to a woman
-//and that woman has to decide if that man is more preferred than her current husband on her list. It's a contradiction to expect that
-//the preference list of the woman is ever disregarded. That would mean some matches would be unstable because a woman would be married to a man
-//that violated the definition of a stable match given above.
+// Definition of Instability - For a given married woman, does a man exist that she prefers over her current husband who also prefers her over his current wife.
+// Given that definition of instability there can be no lying about preferences for a woman because a man can only propose once to a woman
+// and that woman has to decide if that man is more preferred than her current husband on her list. It's a contradiction to expect that
+// the preference list of the woman is ever disregarded. That would mean some matches would be unstable because a woman would be married to a man
+// that violated the definition of a stable match given above.
 type Man struct {
 	Id                int
 	HaveNotProposedTo *linked_list.LinkedList[*Woman] //A stack of women I want in order of preferences. When a woman is missing from it he has already proposed to her.
@@ -42,7 +43,7 @@ type Woman struct {
 //	return fmt.Sprintf("Woman{Id:%v, EngagedTo:%v, Preferences:%v}", w.Id, w.EngagedTo.Id, prefs)
 //}
 
-var womanPrefersMe = func(wp *Woman, courtier *Man) bool { //Does woman prefer this man to the one to which she is currently assigned?
+func womanPrefersMe(wp *Woman, courtier *Man) bool { //Does woman prefer this man to the one to which she is currently assigned?
 	//This function assumes that the wp woman is already engaged.
 	courtierRanking, courtierIsInPreferredList := wp.Preferences[courtier.Id]
 	currentFianceeRanking, currentFianceeIsInPreferredList := wp.Preferences[wp.EngagedTo.Id]
@@ -66,7 +67,7 @@ var womanPrefersMe = func(wp *Woman, courtier *Man) bool { //Does woman prefer t
 	}
 }
 
-func Match(freeMen *linked_list.LinkedList[*Man], wPrefersMe func(wp *Woman, me *Man) bool) []*Woman {
+func Match(freeMen *linked_list.LinkedList[*Man]) []*Woman {
 	fmt.Printf("Size of list:%v\n", linked_list.Len(freeMen))
 	if linked_list.Len(freeMen) == 0 {
 		return []*Woman{}
@@ -85,7 +86,7 @@ func Match(freeMen *linked_list.LinkedList[*Man], wPrefersMe func(wp *Woman, me 
 				//Does this woman prefer me to whom she is currently engaged? If so she
 				//breaks her engagement to that guy and you add that guy to free men.
 				//Otherwise just try the next woman in the current man's non-proposed-to(preferences) stack.
-				if wPrefersMe(wp, m) {
+				if womanPrefersMe(wp, m) {
 					oldMan := wp.EngagedTo
 					oldMan.EngagedTo = nil
 					///Set up current man with this woman

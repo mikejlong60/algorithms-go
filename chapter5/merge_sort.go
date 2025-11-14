@@ -1,9 +1,8 @@
 package chapter5
 
 import (
-	"fmt"
+	//"fmt"
 	"github.com/greymatter-io/golangz/stack"
-	"github.com/hashicorp/go-multierror"
 )
 
 func MergeSortWithInversionChecking[T any](xs []T, inversions int, isInversion func(l, r T) bool, lt func(l, r T) bool) ([]T, int) {
@@ -129,12 +128,14 @@ func MergeSort[T any](xs []T, lt func(l, r T) bool) []T {
 		i := a / 2
 		left := xs[0:i]
 		right := xs[i:]
-		c := make(chan []T, 2)
+		c := make(chan []T, 1)
 		asyncMerge(left, lt, c)
 		asyncMerge(right, lt, c)
-		results := make([]T, 2)
-		results[0], results[1] = <-c, <-c
-		merged := merge(results[0], results[1], lt)
+		//results := make([]T, 2)
+		result1 := <-c
+		result2 := <-c
+		//		results[0], results[1] = <-c, <-c
+		merged := merge(result1, result2, lt)
 		return merged
 	}
 }
@@ -145,46 +146,3 @@ func asyncMerge[T any](xs []T, lt func(l, r T) bool, c chan []T) {
 		c <- merged
 	}()
 }
-
-//func AggregateDias(client *soap.Client, userDN string) (UserAuthorizationObject, error) {
-//	c := make(chan interface{}, 7)
-//	asyncMerge(, c)
-//	async(client, userDN, getAllUserGroups, c)
-//	async(client, userDN, getSecurityAttributes, c)
-//	async(client, userDN, getUserGIMMEEAttributesAndCommunityType, c)
-//	async(client, userDN, getUserAdminOrganization, c)
-//	async(client, userDN, getDutyOrganization, c)
-//	async(client, userDN, getUserGIMMEEOrganizationalPath, c)
-//	diasResults := make([]interface{}, 7)
-//	diasResults[0], diasResults[1], diasResults[2], diasResults[3], diasResults[4], diasResults[5], diasResults[6] = <-c, <-c, <-c, <-c, <-c, <-c, <-c
-//
-//	var errors error
-//
-//	var user = UserAuthorizationObject{UserDN: userDN}
-//	for _, diasValue := range diasResults {
-//		switch v := diasValue.(type) {
-//		case WhitePageAttributesResponse:
-//			user.WhitePage = v
-//		case AllUserGroupsResponse:
-//			user.AllUserGroups = v
-//		case ClearanceInfo:
-//			user.ClearanceInfo = v
-//		case GIMMEEAttributesAndCommunityTypeResponse:
-//			user.GIMMEEAttributesAndCommunityType = v
-//		case UserAdminOrganizationResponse:
-//			user.AdminOrganization = v
-//		case DutyOrganizationResponse:
-//			user.DutyOrganization = v
-//		case GIMMEEOrganizationPathResponse:
-//			user.GIMMEEOrganizationPath = v
-//		case error:
-//			errors = multierror.Append(errors, v)
-//		default:
-//			errors = multierror.Append(errors, fmt.Errorf("Unknown type retured by DIAS web service: %T", v))
-//		}
-//	}
-//	if errors != nil {
-//		return UserAuthorizationObject{}, errors
-//	}
-//	return user, nil
-//}

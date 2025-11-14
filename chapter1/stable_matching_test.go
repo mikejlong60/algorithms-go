@@ -2,13 +2,14 @@ package chapter1
 
 import (
 	"fmt"
+	"math/rand"
+	"testing"
+	"time"
+
 	"github.com/greymatter-io/golangz/linked_list"
 	"github.com/greymatter-io/golangz/propcheck"
 	"github.com/greymatter-io/golangz/sets"
 	"github.com/hashicorp/go-multierror"
-	"math/rand"
-	"testing"
-	"time"
 )
 
 func shuffleAny[A any](toBeShuffled []*A) []*A {
@@ -95,7 +96,7 @@ func TestStableMatchingPropertiesTest(t *testing.T) {
 		func(freeMen *linked_list.LinkedList[*Man]) []*Woman {
 			len := linked_list.Len(freeMen)
 			start := time.Now()
-			r := Match(freeMen, womanPrefersMe)
+			r := Match(freeMen)
 			fmt.Printf("Match took %v for %v couples\n", time.Since(start), len)
 			return r
 		},
@@ -216,10 +217,10 @@ func TestStableMatchingPropertiesIndifferenceTest(t *testing.T) {
 	prop := propcheck.ForAll(g,
 		"Make a bunch of men and women and match them up and see if all matches are stable \n",
 		func(freeMen *linked_list.LinkedList[*Man]) []*Woman {
-			len := linked_list.Len(freeMen)
+			ln := linked_list.Len(freeMen)
 			start := time.Now()
-			r := Match(freeMen, womanPrefersMe)
-			fmt.Printf("Match took %v for %v couples\n", time.Since(start), len)
+			r := Match(freeMen)
+			fmt.Printf("Match took %v for %v couples\n", time.Since(start), ln)
 			return r
 		},
 		func(allWomen []*Woman) (bool, error) {
