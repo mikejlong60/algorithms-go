@@ -1,9 +1,13 @@
 package skiena_4
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/greymatter-io/golangz/arrays"
+	"github.com/greymatter-io/golangz/propcheck"
+	"github.com/greymatter-io/golangz/sets"
 )
 
 //Implement wiggle sort.  The definition of wiggle sort is make an unsorted array of integers
@@ -49,4 +53,59 @@ func TestWiggleSort(t *testing.T) {
 	if !arrays.ArrayEquality(actual, expected, eq) {
 		t.Errorf("actual %v != expected %v", actual, expected)
 	}
+}
+
+func TestWiggeSort(t *testing.T) {
+	lt := func(l, r int) bool {
+		if l < r {
+			return true
+		} else {
+			return false
+		}
+	}
+	eq := func(l, r int) bool {
+		if l == r {
+			return true
+		} else {
+			return false
+		}
+	}
+
+	maxListSize := 3000 //Am banking on the odds being near zero that I get the same bool over 3000 rolls of the die.
+	minListSize := 2
+	ge := propcheck.ChooseInt(0, 20000)
+	ge2 := sets.ChooseSet(minListSize, maxListSize, ge, lt, eq)
+	rng := propcheck.SimpleRNG{Seed: time.Now().Nanosecond()}
+	makeSetEvenNumberOfElements := func(xs []int) []int {
+		if (len(xs) % 2) != 0 {
+			return xs[1:]
+		}
+		return xs
+	}
+
+	evenElementsAscend := propcheck.ForAll(ge2, fmt.Sprintf("List must have at least A length of %v \n", minListSize),
+		makeSetEvenNumberOfElements,
+		func(xs []int) (bool, error) {
+			for i := 0; i < len(xs); i++ {
+				if xs[i] < xs[i+1] {
+					return false, fmt.Errorf("even integers not in ascending sequence")
+				}
+			}
+			return true, nil
+		},
+	)
+	oddElementsAscend := propcheck.ForAll(ge2, fmt.Sprintf("List must have A length less than %v \n", maxListSize),
+		makeSetEvenNumberOfElements,
+		func(xs []int) (bool, error) {
+			for i := 1; i < len(xs); i++ {
+				if xs[i] < xs[i+1] {
+					return false, fmt.Errorf("odd integers not in ascending sequence")
+				}
+			}
+			return true, nil
+		},
+	)
+	bigProp := propcheck.And[[]int](evenElementsAscend, oddElementsAscend)
+	result := bigProp.Run(propcheck.RunParms{100, rng})
+	propcheck.ExpectSuccess[[]int](t, result)
 }
