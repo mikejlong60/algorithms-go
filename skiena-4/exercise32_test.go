@@ -39,7 +39,7 @@ func wiggleSort(xs []int) []int {
 	return xs
 }
 
-func TestWiggleSort(t *testing.T) {
+func TestWiggleSort2(t *testing.T) {
 	xs := []int{3, 1, 4, 2, 6, 5}
 
 	actual := wiggleSort(xs)
@@ -55,7 +55,7 @@ func TestWiggleSort(t *testing.T) {
 	}
 }
 
-func TestWiggeSort(t *testing.T) {
+func TestWiggleSort(t *testing.T) {
 	lt := func(l, r int) bool {
 		if l < r {
 			return true
