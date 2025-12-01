@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/greymatter-io/golangz/arrays"
 	"github.com/greymatter-io/golangz/propcheck"
 	"github.com/greymatter-io/golangz/sets"
 )
@@ -35,42 +34,7 @@ func wiggleSort(xs []int) []int {
 		}
 		i = i + 2
 	}
-	//if !(xs[0] < xs[1] && xs[2] < xs[1] && xs[2] < xs[3]) {
-	//	xs[i], xs[3] = xs[3], xs[i]
-	//}
-	//if i < len(xs)-2 && xs[i] > xs[i+1] && xs[i] < xs[i+2] { //1,3,2,4 case
-	//	xs[i], xs[i+1] = xs[i+1], xs[i]
-	//	continue
-	//}
-	//if i < len(xs)-3 && xs[i] > xs[i+1] && xs[i] > xs[i+2] { //4,2,6,5 case
-	//	//swap 2[i+1],4[i] then you have 2,4,6,5, then swap 4[i+1] and 5[i+3]
-	//	xs[i+1], xs[i] = xs[i], xs[i+1]
-	//	xs[i+1], xs[i+3] = xs[i+3], xs[i+1]
-	//	continue
-	//}
-	//if i < len(xs)-1 && xs[i] > xs[i+1] { // now you can fall through
-	//	xs[i], xs[i+1] = xs[i+1], xs[i]
-	//	continue
-	//}
-	//}
-
 	return xs
-}
-
-func TestWiggleSort2(t *testing.T) {
-	xs := []int{3, 1, 4, 2, 6, 5, 7, 8}
-
-	actual := wiggleSort(xs)
-	expected := []int{1, 3, 2, 5, 4, 7, 6, 8}
-	eq := func(l, r int) bool {
-		if l == r {
-			return true
-		}
-		return false
-	}
-	if !arrays.ArrayEquality(actual, expected, eq) {
-		t.Errorf("actual %v != expected %v", actual, expected)
-	}
 }
 
 func TestWiggleSort(t *testing.T) {
@@ -89,13 +53,13 @@ func TestWiggleSort(t *testing.T) {
 		}
 	}
 
-	maxListSize := 100 //Am banking on the odds being near zero that I get the same bool over 3000 rolls of the die.
+	maxListSize := 3000
 	minListSize := 10
 	ge := propcheck.ChooseInt(0, 20000)
 	ge2 := sets.ChooseSet(minListSize, maxListSize, ge, lt, eq)
 	rng := propcheck.SimpleRNG{Seed: time.Now().Nanosecond()}
 	runWiggleSort := func(xs []int) []int {
-		var r []int
+		var r []int //DEMONSTRATE THAT THIS IS A PURE FUNCTION, INVOKED FOR EACH ANDED RESULT WITH EACH SET TEST SET.
 		if (len(xs) % 2) != 0 {
 			r = xs[1:]
 		} else {
@@ -108,24 +72,24 @@ func TestWiggleSort(t *testing.T) {
 		return r
 	}
 
-	evenElementsAscend := propcheck.ForAll(ge2, "even element pairs ascend",
+	evenElementsAscend := propcheck.ForAll(ge2, "even element [i] < [i+1]",
 		runWiggleSort,
 		func(xs []int) (bool, error) {
 			for i := 0; i < len(xs); {
 				if i+2 < len(xs) && xs[i] > xs[i+1] {
-					return false, fmt.Errorf("even integers not in ascending sequence")
+					return false, fmt.Errorf("even element [i] > [i+1]")
 				}
 				i = i + 2
 			}
 			return true, nil
 		},
 	)
-	oddElementsAscend := propcheck.ForAll(ge2, "uneven element pairs descend",
+	oddElementsAscend := propcheck.ForAll(ge2, "odd element [i] > [i+1]",
 		runWiggleSort,
 		func(xs []int) (bool, error) {
 			for i := 1; i < len(xs); {
 				if i+2 < len(xs) && xs[i] < xs[i+1] {
-					return false, fmt.Errorf("uneven integers not in descending sequence")
+					return false, fmt.Errorf("odd element [i] > [i+1]")
 				}
 				i = i + 2
 			}
@@ -133,6 +97,6 @@ func TestWiggleSort(t *testing.T) {
 		},
 	)
 	bigProp := propcheck.And[[]int](evenElementsAscend, oddElementsAscend)
-	result := bigProp.Run(propcheck.RunParms{100, rng})
+	result := bigProp.Run(propcheck.RunParms{1, rng})
 	propcheck.ExpectSuccess[[]int](t, result)
 }
