@@ -32,8 +32,8 @@ func TestMergeSortPerformanceVersusYourQuicksortAndGolangQuicksort(t *testing.T)
 			return false
 		}
 	}
-	g0 := propcheck.ChooseInt(1, 3)
-	g1 := propcheck.ChooseArray(0, 10, g0)
+	g0 := propcheck.ChooseInt(1, 2)
+	g1 := propcheck.ChooseArray(10000, 10000, g0)
 	rng := propcheck.SimpleRNG{Seed: time.Now().Nanosecond()}
 	prop := propcheck.ForAll(g1,
 		"Test Mergesort  \n",

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/greymatter-io/golangz/propcheck"
-	"github.com/greymatter-io/golangz/sets"
 )
 
 //Implement wiggle sort.  The definition of wiggle sort is make an unsorted array of integers
@@ -38,25 +37,10 @@ func wiggleSort(xs []int) []int {
 }
 
 func TestWiggleSort(t *testing.T) {
-	lt := func(l, r int) bool {
-		if l < r {
-			return true
-		} else {
-			return false
-		}
-	}
-	eq := func(l, r int) bool {
-		if l == r {
-			return true
-		} else {
-			return false
-		}
-	}
-
 	maxListSize := 3000
 	minListSize := 10
 	ge := propcheck.ChooseInt(0, 20000)
-	ge2 := sets.ChooseSet(minListSize, maxListSize, ge, lt, eq)
+	ge2 := propcheck.ChooseArray(minListSize, maxListSize, ge)
 	rng := propcheck.SimpleRNG{Seed: time.Now().Nanosecond()}
 	runWiggleSort := func(xs []int) []int {
 		var r []int //DEMONSTRATE THAT THIS IS A PURE FUNCTION, INVOKED FOR EACH ANDED RESULT WITH EACH SET TEST SET.
@@ -97,6 +81,6 @@ func TestWiggleSort(t *testing.T) {
 		},
 	)
 	bigProp := propcheck.And[[]int](evenElementsAscend, oddElementsAscend)
-	result := bigProp.Run(propcheck.RunParms{1, rng})
+	result := bigProp.Run(propcheck.RunParms{1000, rng})
 	propcheck.ExpectSuccess[[]int](t, result)
 }
