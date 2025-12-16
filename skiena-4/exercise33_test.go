@@ -5,8 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/greymatter-io/golangz/arrays"
 	"github.com/greymatter-io/golangz/heap"
 	"github.com/greymatter-io/golangz/propcheck"
+	"github.com/mikejlong60/algorithms-go/chapter5"
+	log "github.com/sirupsen/logrus"
 )
 
 // Show that you can sort an array of k distinct integers in O(n log k) steps, better than O(n log n).  Think of sorting
@@ -27,59 +30,94 @@ Now just make a new array by popping off the heap until it is empty and writing 
 
 I think this must be how heap sort is implemented.
 */
-
-type HowMany struct {
-	key   int
-	count int
-}
-
-func lt(x, y *HowMany) bool {
-	if x.key < y.key {
+func lt(x, y *int) bool {
+	if *x < *y {
 		return true
 	} else {
 		return false
 	}
 }
 
-var elementBExtractor = func(c *HowMany) int {
-	return c.key
+var elementBExtractor = func(c *int) int {
+	return *c
 }
 
-func heapSortInsertIntoHeap(xss []int) heap.Heap[HowMany, int] {
-	var h = heap.New[HowMany](elementBExtractor)
+func heapSortInsertIntoHeap(xss []int) propcheck.Pair[heap.Heap[int, int], map[int]int] {
+	elementCount := make(map[int]int)
+	var h = heap.New[int, int](elementBExtractor)
 	for _, x := range xss {
-		h = heap.HeapInsert(h, &HowMany{x, 0}, lt)
+		p := heap.FindPosition(h, x)
+		if p < 0 { //element is not in heap yet
+			elementCount[x] = 1
+			h = heap.HeapInsert(h, &x, lt)
+		} else { //increment count of element's appearance in array
+			elementCount[x] = elementCount[x] + 1
+		}
 	}
-	return h
+	return propcheck.Pair[heap.Heap[int, int], map[int]int]{h, elementCount}
 }
 
 func TestHeapDeleteEveryElementStartingFromLast(t *testing.T) {
-	var sortInOLogK = func(xss []int) []HowMany {
-		result := make([]HowMany, 0)
-		var h = heapSortInsertIntoHeap(xss)
-		for _ = range xss {
-			m, err := heap.FindMin(h)
+	var sortInOLogK = func(xss []int) propcheck.Pair[[]int, []int] {
+		result := make([]int, 0)
+		start := time.Now()
+
+		p := heapSortInsertIntoHeap(xss)
+		var h = p.A
+		var err error
+		keyCount := p.B
+		for {
+			m, _ := heap.FindMin(p.A)
+			h, err = heap.HeapDelete(h, 0, lt)
 			if err != nil {
-				fmt.Println(err)
 				break
 			}
-			m.count = m.count + 1
-			result = append(result, *m)
-			h, _ = heap.HeapDelete(h, 0, lt)
+			count := keyCount[*m]
+			iresult := make([]int, count)
+			for i := 0; i < count; i++ {
+				iresult[i] = *m
+			}
+			result = append(result, iresult...)
 		}
-		return result
+		log.Infof("heapsort array of:%v ints took:%v", len(xss), time.Since(start))
+		return propcheck.Pair[[]int, []int]{result, xss}
 	}
-	trueId := func(p []HowMany) (bool, error) {
-		return true, nil
+
+	compareSpeedWithMergeSort := func(p propcheck.Pair[[]int, []int]) (bool, error) {
+
+		lt := func(x, y int) bool {
+			if x < y {
+				return true
+			} else {
+				return false
+			}
+		}
+
+		expected := make([]int, len(p.B))
+		copy(expected, p.B)
+		start := time.Now()
+		expected = chapter5.MergeSort(expected, lt)
+		log.Infof("my mergesort array of:%v ints took:%v", len(p.B), time.Since(start))
+
+		var errors error
+		if !arrays.ArrayEquality(p.A, expected, eq) {
+			errors = fmt.Errorf("Actual:%v Expected:%v", p.A, expected)
+		}
+
+		if errors != nil {
+			return false, errors
+		} else {
+			return true, nil
+		}
 	}
 
 	ge := propcheck.ChooseInt(0, 3)
-	g0 := propcheck.ChooseArray(100, 500, ge)
+	g0 := propcheck.ChooseArray(100000, 100000, ge)
 	rng := propcheck.SimpleRNG{time.Now().Nanosecond()}
 	prop := propcheck.ForAll(g0,
 		"Validate HeapDelete  \n",
 		sortInOLogK,
-		trueId,
+		compareSpeedWithMergeSort,
 	)
 	result := prop.Run(propcheck.RunParms{100, rng})
 	propcheck.ExpectSuccess[[]int](t, result)
