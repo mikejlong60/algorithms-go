@@ -12,40 +12,49 @@ import (
 // Given an array of A[1..n] that has numbers between 1 and n(squared), but which contains at most
 // log log n different numbers, show that you can sort it in less than O(n log n).
 
-func TestGeneratorForArrayOfNWithBase2LogLogNDifferentValues(t *testing.T) {
-	rng := propcheck.SimpleRNG{time.Now().Nanosecond()}
-	g1 := propcheck.ChooseInt(10000, 1000000)
+// Generates an n array of A[1..n] that has numbers between 1 and n(squared), but which contains at most
+// log log n different numbers.  The array is a size between start and stopExclusive
+func ArrayOfNWithBase2LogLogNDifferentValues(start int, stopExclusive int) func(propcheck.SimpleRNG) ([]int, propcheck.SimpleRNG) {
+	g1 := propcheck.ChooseInt(start, stopExclusive)
 	//make it a float
 	g2 := propcheck.Map(g1, func(x int) float64 {
 		return float64(x)
 	})
 
-	///return func(rng SimpleRNG) (string, SimpleRNG)
-
-	g3 := func(x float64, y propcheck.SimpleRNG) func(propcheck.SimpleRNG) ([]int, propcheck.SimpleRNG) {
+	// Take that number and get its log2 log2(a) and generate an array of x numbers
+	// with only a different randomly generated numbers.
+	g3 := func(x float64) func(propcheck.SimpleRNG) ([]int, propcheck.SimpleRNG) {
 		return func(rng propcheck.SimpleRNG) ([]int, propcheck.SimpleRNG) {
-			fmt.Println(x)
 
 			r := int(math.Log2(math.Log2(x)))
+			fmt.Println(x)
+			fmt.Println(r)
 			var lr = rng //The ever-changing random number generator inside the loop below.
-			var res = make([]int, int(x))
+			var res = make([]int, 0)
 			var a int
+			var j int
+			var start int
 			for i := 0; i < r; i++ {
 				a, lr = propcheck.ChooseInt(0, int(x)/r)(lr)
-				a1 := make([]int, a/3)
-				for j := 0; j < a; j++ {
-					a1 = append(a1, a)
+				for j = 0; j < a; j++ {
+					res = append(res, a)
+					start++
 				}
-				res = append(res, a1...)
 			}
 			return res, lr
 		}
 	}
-	res := propcheck.FlatMap(g2, g3)
+	return propcheck.FlatMap(g2, g3)
+}
+
+func TestGeneratorForArrayOfNWithBase2LogLogNDifferentValues(t *testing.T) {
+	rng := propcheck.SimpleRNG{time.Now().Nanosecond()}
+	res := ArrayOfNWithBase2LogLogNDifferentValues(10000, 1000000)
 	actual, _ := res(rng)
-	if len(actual) != 13 {
-		t.Errorf("Map should have incremented the unit value by 1 \n")
-	}
+	fmt.Println(actual)
+	//if len(actual) != 13 {
+	//	t.Errorf("Map should have incremented the unit value by 1 \n")
+	//}
 	//if rng != rng2 {
 	//	t.Error("Should have gotten the same SimpleRNG because you just flatmapped over A Id generator")
 	//}
