@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"math"
 	"testing"
+	"time"
 
+	"github.com/greymatter-io/golangz/arrays"
 	"github.com/greymatter-io/golangz/propcheck"
+	"github.com/greymatter-io/golangz/sorting"
 )
 
 // Given an array of A[1..n] that has numbers between 1 and n(squared), but which contains at most
@@ -49,24 +52,79 @@ func ArrayOfNWithBase2LogLogNDifferentValuesOrEmptyArray(start int, stopExclusiv
 
 	//You can change the weights to produce periodic empty arrays.
 	l1 := []propcheck.WeightedGen[[]int]{
-		{Gen: r, Weight: 10}, {Gen: emptyArray, Weight: 10},
+		{Gen: r, Weight: 10}, {Gen: emptyArray, Weight: 0},
 	}
 
 	r2 := propcheck.Weighted(l1)
 	return r2
 }
 
+func log2log2Nsort(xs []int) propcheck.Pair[[]int, []int] {
+	allDistinctValues := make(map[int]int)
+
+	for _, x := range xs {
+		allDistinctValues[x] = allDistinctValues[x] + 1
+	}
+
+	keys := make([]propcheck.Pair[int, int], 0)
+	for key, value := range allDistinctValues {
+		keys = append(keys, propcheck.Pair[int, int]{key, value})
+	}
+
+	lt := func(l, r propcheck.Pair[int, int]) bool {
+		if l.A < r.A {
+			return true
+		} else {
+			return false
+		}
+	}
+	sorting.QuickSort(keys, lt)
+
+	result := make([]int, 0)
+	for _, key := range keys {
+		for i := 0; i < key.B; i++ {
+			result = append(result, key.A)
+		}
+	}
+
+	return propcheck.Pair[[]int, []int]{xs, result}
+}
+
 func TestGeneratorForArrayOfNWithBase2LogLogNDifferentValues(t *testing.T) {
 	rng := propcheck.SimpleRNG{86322638} //time.Now().Nanosecond()}
-	res := ArrayOfNWithBase2LogLogNDifferentValuesOrEmptyArray(100, 1000)
-	checker := func(xs []int) []int {
+	res := ArrayOfNWithBase2LogLogNDifferentValuesOrEmptyArray(100000, 100000)
+	checker := func(xs []int) propcheck.Pair[[]int, []int] {
 		fmt.Printf("Generated array of length:%v\n", len(xs))
 
-		return xs
+		start := time.Now()
+		xss := log2log2Nsort(xs)
+
+		lt := func(l, r int) bool {
+			if l < r {
+				return true
+			} else {
+				return false
+			}
+		}
+		fmt.Printf("my sort took:%v\n", time.Since(start))
+		start = time.Now()
+		sorting.QuickSort(xss.A, lt)
+		fmt.Printf("regular quicksort sort took:%v\n", time.Since(start))
+
+		return xss
 	}
-	assertion := func(xs []int) (bool, error) {
-		if len(xs) < 10 {
-			return false, fmt.Errorf("not enough elements:%v", len(xs))
+	assertion := func(xss propcheck.Pair[[]int, []int]) (bool, error) {
+		eq := func(l, r int) bool {
+			if l == r {
+				return true
+			} else {
+				return false
+			}
+		}
+
+		equal := arrays.ArrayEquality(xss.A, xss.B, eq)
+		if !equal {
+			return false, fmt.Errorf("arrays not equal")
 		}
 		return true, nil
 	}
