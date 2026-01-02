@@ -43,6 +43,9 @@ func ArrayOfNWithBase2LogLogNDifferentValuesOrEmptyArray(start int, stopExclusiv
 					start++
 				}
 			}
+			//Ramdomize the ordering of the array
+			sorting.FisherYatesShuffle(res)
+
 			return res, lr
 		}
 	}
@@ -52,7 +55,7 @@ func ArrayOfNWithBase2LogLogNDifferentValuesOrEmptyArray(start int, stopExclusiv
 
 	//You can change the weights to produce periodic empty arrays.
 	l1 := []propcheck.WeightedGen[[]int]{
-		{Gen: r, Weight: 10}, {Gen: emptyArray, Weight: 0},
+		{Gen: r, Weight: 10}, {Gen: emptyArray, Weight: 1},
 	}
 
 	r2 := propcheck.Weighted(l1)
@@ -80,10 +83,12 @@ func log2log2Nsort(xs []int) propcheck.Pair[[]int, []int] {
 	}
 	sorting.QuickSort(keys, lt)
 
-	result := make([]int, 0)
+	result := make([]int, len(xs))
+	var h = 0
 	for _, key := range keys {
 		for i := 0; i < key.B; i++ {
-			result = append(result, key.A)
+			result[h] = key.A
+			h++
 		}
 	}
 
@@ -91,8 +96,8 @@ func log2log2Nsort(xs []int) propcheck.Pair[[]int, []int] {
 }
 
 func TestGeneratorForArrayOfNWithBase2LogLogNDifferentValues(t *testing.T) {
-	rng := propcheck.SimpleRNG{86322638} //time.Now().Nanosecond()}
-	res := ArrayOfNWithBase2LogLogNDifferentValuesOrEmptyArray(100000, 100000)
+	rng := propcheck.SimpleRNG{time.Now().Nanosecond()}
+	res := ArrayOfNWithBase2LogLogNDifferentValuesOrEmptyArray(10000, 100000)
 	checker := func(xs []int) propcheck.Pair[[]int, []int] {
 		fmt.Printf("Generated array of length:%v\n", len(xs))
 
@@ -106,6 +111,7 @@ func TestGeneratorForArrayOfNWithBase2LogLogNDifferentValues(t *testing.T) {
 				return false
 			}
 		}
+		//xss.B is the array sorted with my sort, xss.A is the original array.
 		fmt.Printf("my sort took:%v\n", time.Since(start))
 		start = time.Now()
 		sorting.QuickSort(xss.A, lt)
@@ -122,6 +128,7 @@ func TestGeneratorForArrayOfNWithBase2LogLogNDifferentValues(t *testing.T) {
 			}
 		}
 
+		//xss.B is the array sorted with my sort, xss.A is the original array sorted with quicksort.
 		equal := arrays.ArrayEquality(xss.A, xss.B, eq)
 		if !equal {
 			return false, fmt.Errorf("arrays not equal")
