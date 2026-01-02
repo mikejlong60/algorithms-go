@@ -17,7 +17,9 @@ import (
 // Generates an n array of A[1..n] that has numbers between 1 and n(squared), but which contains at most
 // log log n different numbers.  The array is a size between start and stopExclusive
 func ArrayOfNWithBase2LogLogNDifferentValuesOrEmptyArray(start int, stopExclusive int) func(rng propcheck.SimpleRNG) ([]int, propcheck.SimpleRNG) {
+	//Generate the size of the array
 	g1 := propcheck.ChooseInt(start, stopExclusive)
+
 	//make it a float
 	g2 := propcheck.Map(g1, func(x int) float64 {
 		return float64(x)
@@ -43,7 +45,7 @@ func ArrayOfNWithBase2LogLogNDifferentValuesOrEmptyArray(start int, stopExclusiv
 					start++
 				}
 			}
-			//Ramdomize the ordering of the array
+			//Randomize the ordering of the array
 			sorting.FisherYatesShuffle(res)
 
 			return res, lr
