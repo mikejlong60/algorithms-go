@@ -2,12 +2,12 @@ package skiena_4
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
 	"github.com/greymatter-io/golangz/arrays"
 	"github.com/greymatter-io/golangz/propcheck"
-	"github.com/greymatter-io/golangz/sorting"
 )
 
 // Given an array of consisting of ones and zeros,
@@ -22,15 +22,15 @@ func TestNMinus1Comparisons(t *testing.T) {
 		i := 0
 		maybeNextZero := 0
 		for i < len(xs)-1 {
+			if maybeNextZero == len(xs) {
+				return xs
+			}
 			if xs[i] == 1 { //see if there are any zeros past here
 				for j := maybeNextZero; j < len(xs); j++ {
 					if xs[j] == 0 {
 						xs[i], xs[j] = xs[j], xs[i]
 						maybeNextZero = j + 1
 						break
-					}
-					if j == len(xs)-1 {
-						return xs
 					}
 				}
 			} else {
@@ -41,13 +41,9 @@ func TestNMinus1Comparisons(t *testing.T) {
 		return xs
 	}
 	verifySort := func(actual []int) (bool, error) {
-		//fmt.Printf("xs:%v\n", actual)
-		lt := func(x, y int) bool {
-			return x < y
-		}
 		expected := make([]int, len(actual))
 		copy(expected, actual)
-		sorting.QuickSort(expected, lt)
+		sort.Ints(expected)
 		r := arrays.ArrayEquality(actual, expected, func(l, r int) bool { return l == r })
 		if !r {
 			return false, fmt.Errorf("expected %v, got %v", expected, actual)
