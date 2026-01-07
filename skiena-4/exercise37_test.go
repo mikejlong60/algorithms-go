@@ -20,13 +20,17 @@ func TestNMinus1Comparisons(t *testing.T) {
 	sortIt := func(xs []int) []int {
 		fmt.Printf("Generated array of length:%v\n", len(xs))
 		i := 0
+		steps := 0
 		maybeNextZero := 0
 		for i < len(xs)-1 {
+			steps++
 			if maybeNextZero == len(xs) {
+				fmt.Printf("steps::%v\n", steps)
 				return xs
 			}
 			if xs[i] == 1 { //see if there are any zeros past here
 				for j := maybeNextZero; j < len(xs); j++ {
+					steps++
 					if xs[j] == 0 {
 						xs[i], xs[j] = xs[j], xs[i]
 						maybeNextZero = j + 1
@@ -38,6 +42,7 @@ func TestNMinus1Comparisons(t *testing.T) {
 			}
 			i++
 		}
+		fmt.Printf("steps::%v\n", steps)
 		return xs
 	}
 	verifySort := func(actual []int) (bool, error) {
