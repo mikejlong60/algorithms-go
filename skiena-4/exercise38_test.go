@@ -6,17 +6,42 @@ import (
 	"math"
 	"sort"
 	"testing"
+
+	"github.com/greymatter-io/golangz/propcheck"
+	"github.com/greymatter-io/golangz/sets"
 )
 
-//
-//func SimplePolygonGenerator(arraySize int, start int, stopExclusive int) func(rng propcheck.SimpleRNG) ([]Point, propcheck.SimpleRNG) {
-//
-//	xs := propcheck.ChooseArray(arraySize, arraySize, propcheck.ChooseInt(start, stopExclusive))
-//	ys := propcheck.ChooseArray(arraySize, arraySize, propcheck.ChooseInt(start, stopExclusive))
-//
-//	propcheck.Map2(xs, ys, func(xs, ys []int) Point {return Point{float64(x), float64(y)}})
-//
-//}
+func SimplePolygonGenerator(arraySize int, start int, stopExclusive int) func(rng propcheck.SimpleRNG) ([]Point, propcheck.SimpleRNG) {
+	xs := propcheck.ChooseArray(arraySize, arraySize, propcheck.ChooseInt(start, stopExclusive))
+	ys := propcheck.ChooseArray(arraySize, arraySize, propcheck.ChooseInt(start, stopExclusive))
+
+	ps := propcheck.Map2(xs, ys, func(xs, ys []int) []Point {
+		r := make([]Point, len(xs))
+		for x, i := range xs {
+			p := Point{float64(x), float64(ys[i])}
+			r[i] = p
+		}
+		lt := func(l, r Point) bool {
+			if l.X > r.X {
+				return true
+			}
+			if l.X == r.X && l.Y < r.Y {
+				return true
+			}
+			return false
+
+		}
+		eq := func(l, r Point) bool {
+			if l.X == r.X && l.Y == r.Y {
+				return true
+			}
+			return false
+
+		}
+		return sets.ToSet(r, lt, eq)
+	})
+	return ps
+}
 
 func TestSimplePolygon(t *testing.T) {
 	xs := []Point{{1.0, 1.0}, {2.0, 5.0}, {3.0, 2.0}, {5.0, 4.0}, {5, 5}, {3, 4}, {4, 4}}
