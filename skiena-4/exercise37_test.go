@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/greymatter-io/golangz/arrays"
 	"github.com/greymatter-io/golangz/propcheck"
@@ -14,7 +15,7 @@ import (
 // 2. Devise another algorithm that sorts the array in 2n/3 comparisons.
 
 func TestNMinus1Comparisons(t *testing.T) {
-	rng := propcheck.SimpleRNG{804760280} //time.Now().Nanosecond()}
+	rng := propcheck.SimpleRNG{time.Now().Nanosecond()}
 	res := propcheck.ChooseArray(500000, 5000000, propcheck.ChooseInt(0, 2))
 	sortIt := func(xs []int) []int {
 		fmt.Printf("Generated array of length:%v\n", len(xs))
