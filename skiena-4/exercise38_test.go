@@ -14,9 +14,12 @@ import (
 
 type Point struct{ X, Y float64 }
 
-func dot(a, b Point) float64 { return a.X*b.X + a.Y*b.Y }
-func sub(a, b Point) Point   { return Point{a.X - b.X, a.Y - b.Y} }
-func norm(a Point) float64   { return math.Hypot(a.X, a.Y) }
+func dot(a, b Point) float64       { return a.X*b.X + a.Y*b.Y }
+func sub(a, b Point) Point         { return Point{a.X - b.X, a.Y - b.Y} }
+func add(a, b Point) Point         { return Point{a.X + b.X, a.Y + b.Y} }
+func mul(a Point, s float64) Point { return Point{a.X * s, a.Y * s} }
+
+func norm(a Point) float64 { return math.Hypot(a.X, a.Y) }
 func unit(a Point) Point {
 	n := norm(a)
 	return Point{a.X / n, a.Y / n}
@@ -27,59 +30,15 @@ func perp(u Point) Point { // rotate +90°
 
 type event struct {
 	y     float64
-	delta int
+	delta int // +1 at start, -1 at end
 }
 
-// K(u): maximum number of edge intersections over all lines parallel to u
-func maxPenetrationsForDir(poly []Point, u Point) int {
-	w := perp(u)
-
-	events := make([]event, 0, 2*len(poly))
-
-	n := len(poly)
-	const eps = 1e-12
-
-	for i := 0; i < n; i++ {
-		a := poly[i]
-		b := poly[(i+1)%n]
-
-		ya := dot(a, w)
-		yb := dot(b, w)
-
-		if math.Abs(ya-yb) <= eps {
-			// edge parallel to u => ignore for generic scanlines
-			continue
-		}
-
-		ylo, yhi := ya, yb
-		if ylo > yhi {
-			ylo, yhi = yhi, ylo
-		}
-
-		// Half-open interval [ylo, yhi)
-		events = append(events, event{y: ylo, delta: +1})
-		events = append(events, event{y: yhi, delta: -1})
-	}
-
-	sort.Slice(events, func(i, j int) bool {
-		if events[i].y == events[j].y {
-			// Important: process -1 before +1 at same y for [ylo, yhi)
-			return events[i].delta < events[j].delta
-		}
-		return events[i].y < events[j].y
-	})
-
-	cur, best := 0, 0
-	for _, e := range events {
-		cur += e.delta
-		if cur > best {
-			best = cur
-		}
-	}
-	return best
-}
-
-func BestMaxPenetrationVector(poly []Point) (bestU Point, bestK int) {
+// MaxPenetrationLine returns the direction u (unit), the normal w (unit), the offset c,
+// and the maximum number of boundary intersections bestK.
+//
+// The maximizing line is: dot(w, x) = c
+// A point on the line is p0 = w * c (since w is unit).
+func MaxPenetrationLine(poly []Point) (bestU Point, bestW Point, bestC float64, bestK int) {
 	n := len(poly)
 	bestK = -1
 
@@ -90,16 +49,137 @@ func BestMaxPenetrationVector(poly []Point) (bestU Point, bestK int) {
 				continue
 			}
 			u := unit(v)
-			k := maxPenetrationsForDir(poly, u)
+
+			k, c, ok := maxPenetrationsAndOffset(poly, u)
+			if !ok {
+				continue
+			}
 			if k > bestK {
 				bestK = k
 				bestU = u
+				bestW = perp(u) // unit, since u is unit
+				bestC = c
 			}
-			// Optional: direction is axial; u and -u are equivalent for lines,
-			// so you don't need to test -u separately.
 		}
 	}
-	return bestU, bestK
+
+	// If polygon is degenerate or candidates didn't run, bestK may stay -1.
+	// For a valid simple polygon, you should get bestK >= 2.
+	return
+}
+
+// For a fixed direction u, compute:
+// - bestK: maximum number of boundary intersections among lines parallel to u
+// - bestC: offset of a line achieving bestK (in dot(w,x)=c form), choosing an interior offset (mid-interval).
+//
+// Returns ok=false if it couldn't form a meaningful interval (e.g., no non-parallel edges).
+func maxPenetrationsAndOffset(poly []Point, u Point) (bestK int, bestC float64, ok bool) {
+	w := perp(u)
+
+	events := make([]event, 0, 2*len(poly))
+	const eps = 1e-12
+	n := len(poly)
+
+	for i := 0; i < n; i++ {
+		a := poly[i]
+		b := poly[(i+1)%n]
+
+		ya := dot(a, w)
+		yb := dot(b, w)
+
+		if math.Abs(ya-yb) <= eps {
+			// Edge parallel to u => it won't be crossed by generic lines parallel to u.
+			continue
+		}
+
+		ylo, yhi := ya, yb
+		if ylo > yhi {
+			ylo, yhi = yhi, ylo
+		}
+
+		// Half-open interval [ylo, yhi):
+		events = append(events, event{y: ylo, delta: +1})
+		events = append(events, event{y: yhi, delta: -1})
+	}
+
+	if len(events) == 0 {
+		return 0, 0, false
+	}
+
+	// Sort by y, and for equal y process starts (+1) BEFORE ends (-1)
+	// so [ylo, yhi) is counted correctly.
+	sort.Slice(events, func(i, j int) bool {
+		if events[i].y == events[j].y {
+			return events[i].delta > events[j].delta // +1 first
+		}
+		return events[i].y < events[j].y
+	})
+
+	bestK = 0
+	bestC = events[0].y
+	cur := 0
+
+	// Sweep grouped by y; after applying all deltas at y, cur applies on [y, nextY)
+	idx := 0
+	for idx < len(events) {
+		y := events[idx].y
+
+		// apply all deltas at this y
+		for idx < len(events) && events[idx].y == y {
+			cur += events[idx].delta
+			idx++
+		}
+
+		if idx >= len(events) {
+			break
+		}
+		nextY := events[idx].y
+		if nextY-y <= eps {
+			continue
+		}
+
+		// cur is the number of crossings for any scanline with offset in [y, nextY)
+		if cur > bestK {
+			bestK = cur
+			bestC = (y + nextY) / 2.0 // pick a representative offset inside the max interval
+		}
+	}
+
+	return bestK, bestC, true
+}
+
+// Handy for visualization: return two far-apart points on the maximizing line
+// so you can draw it as a segment. The line is dot(w,x)=c, direction is u.
+func LineSegmentForPlot(poly []Point, u, w Point, c float64) (p0, p1 Point) {
+	// pick pBase on the line: pBase = w*c (since w is unit)
+	pBase := mul(w, c)
+
+	// choose a length big enough to cross the polygon bbox
+	minX, maxX := poly[0].X, poly[0].X
+	minY, maxY := poly[0].Y, poly[0].Y
+	for _, p := range poly[1:] {
+		if p.X < minX {
+			minX = p.X
+		}
+		if p.X > maxX {
+			maxX = p.X
+		}
+		if p.Y < minY {
+			minY = p.Y
+		}
+		if p.Y > maxY {
+			maxY = p.Y
+		}
+	}
+	diag := math.Hypot(maxX-minX, maxY-minY)
+	L := 10 * diag
+	if L == 0 {
+		L = 1
+	}
+
+	p0 = add(pBase, mul(u, -L))
+	p1 = add(pBase, mul(u, +L))
+	return
 }
 
 // /
@@ -140,12 +220,16 @@ func SimplePolygonGenerator(arraySize int, startingRange int, endingRange int) f
 
 func TestMostWallPenetrationsThroughSimplePolygon(t *testing.T) {
 	rng := propcheck.SimpleRNG{time.Now().Nanosecond()}
-	res := SimplePolygonGenerator(5, 1, 5)
+	res := SimplePolygonGenerator(500, 1, 500)
 	maxPenetrations := func(xs []Point) []Point {
 		fmt.Printf("Generated array of length:%v [%v]\n", len(xs), xs) // This is what I write now.
-		bestU, bestK := BestMaxPenetrationVector(xs)
+		bestU, bestW, bestC, bestK := MaxPenetrationLine(xs)
+		p0, p1 := LineSegmentForPlot(xs, bestU, bestW, bestC)
 		fmt.Printf("Best max penetrations bestu %v\n", bestU)
+		fmt.Printf("Best max penetrations bestW %v\n", bestW)
+		fmt.Printf("Best max penetrations bestC %v\n", bestC)
 		fmt.Printf("Best max penetrations bestk %v\n", bestK)
+		fmt.Printf("Line Segment for plot po:%v p1:%v \n", p0, p1)
 		return xs
 	}
 	verifyMaxPenetrations := func(actual []Point) (bool, error) {
