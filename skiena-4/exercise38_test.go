@@ -6,23 +6,115 @@ import (
 	"math"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/greymatter-io/golangz/propcheck"
 	"github.com/greymatter-io/golangz/sets"
 )
 
-func SimplePolygonGenerator(arraySize int, start int, stopExclusive int) func(rng propcheck.SimpleRNG) ([]Point, propcheck.SimpleRNG) {
-	xs := propcheck.ChooseArray(arraySize, arraySize, propcheck.ChooseInt(start, stopExclusive))
-	ys := propcheck.ChooseArray(arraySize, arraySize, propcheck.ChooseInt(start, stopExclusive))
+type Point struct{ X, Y float64 }
+
+func dot(a, b Point) float64 { return a.X*b.X + a.Y*b.Y }
+func sub(a, b Point) Point   { return Point{a.X - b.X, a.Y - b.Y} }
+func norm(a Point) float64   { return math.Hypot(a.X, a.Y) }
+func unit(a Point) Point {
+	n := norm(a)
+	return Point{a.X / n, a.Y / n}
+}
+func perp(u Point) Point { // rotate +90°
+	return Point{-u.Y, u.X}
+}
+
+type event struct {
+	y     float64
+	delta int
+}
+
+// K(u): maximum number of edge intersections over all lines parallel to u
+func maxPenetrationsForDir(poly []Point, u Point) int {
+	w := perp(u)
+
+	events := make([]event, 0, 2*len(poly))
+
+	n := len(poly)
+	const eps = 1e-12
+
+	for i := 0; i < n; i++ {
+		a := poly[i]
+		b := poly[(i+1)%n]
+
+		ya := dot(a, w)
+		yb := dot(b, w)
+
+		if math.Abs(ya-yb) <= eps {
+			// edge parallel to u => ignore for generic scanlines
+			continue
+		}
+
+		ylo, yhi := ya, yb
+		if ylo > yhi {
+			ylo, yhi = yhi, ylo
+		}
+
+		// Half-open interval [ylo, yhi)
+		events = append(events, event{y: ylo, delta: +1})
+		events = append(events, event{y: yhi, delta: -1})
+	}
+
+	sort.Slice(events, func(i, j int) bool {
+		if events[i].y == events[j].y {
+			// Important: process -1 before +1 at same y for [ylo, yhi)
+			return events[i].delta < events[j].delta
+		}
+		return events[i].y < events[j].y
+	})
+
+	cur, best := 0, 0
+	for _, e := range events {
+		cur += e.delta
+		if cur > best {
+			best = cur
+		}
+	}
+	return best
+}
+
+func BestMaxPenetrationVector(poly []Point) (bestU Point, bestK int) {
+	n := len(poly)
+	bestK = -1
+
+	for i := 0; i < n; i++ {
+		for j := i + 1; j < n; j++ {
+			v := sub(poly[j], poly[i])
+			if norm(v) == 0 {
+				continue
+			}
+			u := unit(v)
+			k := maxPenetrationsForDir(poly, u)
+			if k > bestK {
+				bestK = k
+				bestU = u
+			}
+			// Optional: direction is axial; u and -u are equivalent for lines,
+			// so you don't need to test -u separately.
+		}
+	}
+	return bestU, bestK
+}
+
+// /
+func SimplePolygonGenerator(arraySize int, startingRange int, endingRange int) func(rng propcheck.SimpleRNG) ([]Point, propcheck.SimpleRNG) {
+	xs := propcheck.ChooseArray(arraySize, arraySize, propcheck.ChooseInt(startingRange, endingRange))
+	ys := propcheck.ChooseArray(arraySize, arraySize, propcheck.ChooseInt(startingRange, endingRange))
 
 	ps := propcheck.Map2(xs, ys, func(xs, ys []int) []Point {
 		r := make([]Point, len(xs))
-		for x, i := range xs {
+		for i, x := range xs {
 			p := Point{float64(x), float64(ys[i])}
 			r[i] = p
 		}
 		lt := func(l, r Point) bool {
-			if l.X > r.X {
+			if l.X < r.X {
 				return true
 			}
 			if l.X == r.X && l.Y < r.Y {
@@ -38,20 +130,31 @@ func SimplePolygonGenerator(arraySize int, start int, stopExclusive int) func(rn
 			return false
 
 		}
-		return sets.ToSet(r, lt, eq)
+		s := sets.ToSet(r, lt, eq)
+		r, err := BuildSimplePolygon(s) //This function written by chatGPT
+		fmt.Println(err)
+		return r
 	})
 	return ps
 }
 
-func TestSimplePolygon(t *testing.T) {
-	xs := []Point{{1.0, 1.0}, {2.0, 5.0}, {3.0, 2.0}, {5.0, 4.0}, {5, 5}, {3, 4}, {4, 4}}
-	r, err := BuildSimplePolygon(xs)
-	fmt.Println(r)
-	fmt.Println(err)
-}
-
-type Point struct {
-	X, Y float64
+func TestMostWallPenetrationsThroughSimplePolygon(t *testing.T) {
+	rng := propcheck.SimpleRNG{time.Now().Nanosecond()}
+	res := SimplePolygonGenerator(5, 1, 5)
+	maxPenetrations := func(xs []Point) []Point {
+		fmt.Printf("Generated array of length:%v [%v]\n", len(xs), xs) // This is what I write now.
+		bestU, bestK := BestMaxPenetrationVector(xs)
+		fmt.Printf("Best max penetrations bestu %v\n", bestU)
+		fmt.Printf("Best max penetrations bestk %v\n", bestK)
+		return xs
+	}
+	verifyMaxPenetrations := func(actual []Point) (bool, error) {
+		expected := make([]Point, len(actual))
+		copy(expected, actual)
+		return true, nil
+	}
+	test := propcheck.ForAll(res, "Find a line going through the polygon that crosses the most number of edges.", maxPenetrations, verifyMaxPenetrations)
+	propcheck.ExpectSuccess[[]Point](t, test.Run(propcheck.RunParms{100, rng}))
 }
 
 const eps = 1e-12
