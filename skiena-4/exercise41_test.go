@@ -48,7 +48,7 @@ func binarySearch(sortedArray []int, target int) bool {
 	return false
 }
 
-func TestBinarySearch(t *testing.T) {
+func TestBinarySearchSuccess(t *testing.T) {
 	rng := propcheck.SimpleRNG{time.Now().Nanosecond()}
 
 	res := propcheck.ChooseArray(5000000, 5000000, propcheck.ChooseInt(-100000, 100000))
@@ -61,12 +61,35 @@ func TestBinarySearch(t *testing.T) {
 
 		return answer
 	}
-	verifySearch := func(actual bool) (bool, error) {
+	verifySuccess := func(actual bool) (bool, error) {
 		if !actual {
 			return false, fmt.Errorf("expected %v, got %v", true, actual)
 		}
 		return true, nil
 	}
-	test := propcheck.ForAll(res, "Binary search an array of ints.", sortIt, verifySearch)
+	test := propcheck.ForAll(res, "Binary search an array of ints.", sortIt, verifySuccess)
+	propcheck.ExpectSuccess[[]int](t, test.Run(propcheck.RunParms{10, rng}))
+}
+
+func TestBinarySearchNoFind(t *testing.T) {
+	rng := propcheck.SimpleRNG{time.Now().Nanosecond()}
+
+	res := propcheck.ChooseArray(0, 5000, propcheck.ChooseInt(0, 100000))
+	sortIt := func(xs []int) bool {
+		steps1 = 0
+		fmt.Printf("Generated array of length:%v\n", len(xs))
+		sort.Ints(xs)
+		answer := binarySearch(xs, -100)
+		fmt.Printf("steps1:%v\n", steps1)
+
+		return answer
+	}
+	verifyFailure := func(actual bool) (bool, error) {
+		if actual {
+			return false, fmt.Errorf("expected %v, got %v", false, actual)
+		}
+		return true, nil
+	}
+	test := propcheck.ForAll(res, "Binary search an array of ints and fail to find it.", sortIt, verifyFailure)
 	propcheck.ExpectSuccess[[]int](t, test.Run(propcheck.RunParms{10, rng}))
 }
