@@ -17,6 +17,13 @@ func binarySearch(sortedArray []int, target int) bool {
 		return false
 	}
 
+	if len(sortedArray) == 1 {
+		if sortedArray[0] == target {
+			return true
+		} else {
+			return false
+		}
+	}
 	midpoint := len(sortedArray) / 2
 	if sortedArray[midpoint] == target {
 		return true
@@ -100,28 +107,52 @@ func TestBinarySearchEmptyArray(t *testing.T) {
 	propcheck.ExpectSuccess[[]int](t, test.Run(propcheck.RunParms{100, rng}))
 }
 
+// Answer.
+// Average time binary Search:946ns
+// Average time special binary Search:1.929µs
+// Average time sequential Search:149.239µs
+// The special binary search is not better. The two binary search are the same.
+// Any difference is due to cache warm up or something else.
+// But the sequential search is always slower.
 func TestTwoApproaches(t *testing.T) {
-	rng := propcheck.SimpleRNG{976542023}
+	const testCases = 30
+	var totTimeBinarySearch time.Duration
+	var totTimeSpecialBinarySearch time.Duration
+	var totTimeSeqSearch time.Duration
+	rng := propcheck.SimpleRNG{time.Now().Nanosecond()}
+	f := propcheck.ChooseArray(10000, 1000000, propcheck.ChooseInt(-100000, 100000))
 
-	res := propcheck.ChooseArray(100000, 100000, propcheck.ChooseInt(-100000, 100000))
 	sortIt := func(xs []int) bool {
-		steps1 = 0
-		fmt.Printf("Generated array of length:%v\n", len(xs))
 		lookfor := xs[len(xs)/2]
+
 		sort.Ints(xs)
 
-		cutoff := float32(len(xs)) * .6
-		goodCustomers := xs[:int(cutoff)]
-		notGoodCustomers := xs[int(cutoff):]
+		cutoff := int(float32(len(xs)) * .6)
+		goodCustomers := xs[:cutoff]
+		notGoodCustomers := xs[cutoff:]
 		start := time.Now()
-		answer := binarySearch(xs, lookfor)
-		fmt.Printf("binary of search of whole array took:%v\n", time.Since(start))
-		start = time.Now()
-		answer = binarySearch(goodCustomers, lookfor)
+		answer := binarySearch(goodCustomers, lookfor)
 		if !answer {
 			answer = binarySearch(notGoodCustomers, lookfor)
 		}
-		fmt.Printf("binary of search using special split algo took:%v\n", time.Since(start))
+		b := time.Since(start)
+		totTimeSpecialBinarySearch = totTimeSpecialBinarySearch + b
+		start = time.Now()
+		answer = binarySearch(xs, lookfor)
+		a := time.Since(start)
+		totTimeBinarySearch = totTimeBinarySearch + a
+		sequentialSearch := func(xs []int) bool {
+			for _, x := range xs {
+				if x == lookfor {
+					return true
+				}
+			}
+			return false
+		}
+		start = time.Now()
+		answer = sequentialSearch(xs)
+		c := time.Since(start)
+		totTimeSeqSearch = totTimeSeqSearch + c
 
 		return answer
 	}
@@ -131,6 +162,9 @@ func TestTwoApproaches(t *testing.T) {
 		}
 		return true, nil
 	}
-	test := propcheck.ForAll(res, "Binary search an array of ints.", sortIt, verifySuccess)
-	propcheck.ExpectSuccess[[]int](t, test.Run(propcheck.RunParms{100, rng}))
+	test := propcheck.ForAll(f, "Binary search an array of ints.", sortIt, verifySuccess)
+	propcheck.ExpectSuccess[[]int](t, test.Run(propcheck.RunParms{testCases, rng}))
+	fmt.Printf("Average time binary Search:%v\n", totTimeBinarySearch/testCases)
+	fmt.Printf("Average time special binary Search:%v\n", totTimeSpecialBinarySearch/testCases)
+	fmt.Printf("Average time sequential Search:%v\n", totTimeSeqSearch/testCases)
 }
