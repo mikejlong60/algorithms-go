@@ -95,7 +95,7 @@ func TestIsRamanujanNumber2(t *testing.T) {
 					t.Errorf("expected{{2, 16, 9, 15}} for %v but got %v and took %v steps", x, v, steps2)
 				}
 			} else {
-				fmt.Printf("another Ramanujan number %v with cube roots%v and steps:%v", x, v, steps2)
+				fmt.Printf("another Ramanujan number %v with cube roots%v and steps:%v\n", x, v, steps2)
 			}
 
 		default:
