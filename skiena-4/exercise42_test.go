@@ -37,7 +37,7 @@ func ramanujanNumber(aCandidate, bCandidate int, ramanujanPair propcheck.Pair[in
 	return ramanujanNumber(aCandidate, bCandidate+1, ramanujanPair, maybeRamanujanNumber)
 }
 
-func findAPFirdtair(maybeRamanujanNumber int, ramanujanPair propcheck.Pair[int, int]) option.Option[propcheck.Pair[int, int]] {
+func findAPair(maybeRamanujanNumber int, ramanujanPair propcheck.Pair[int, int]) option.Option[propcheck.Pair[int, int]] {
 	for i := 0; i <= maybeRamanujanNumber; i++ {
 		b := ramanujanNumber(i, i+1, ramanujanPair, maybeRamanujanNumber)
 		switch v := b.(type) {
