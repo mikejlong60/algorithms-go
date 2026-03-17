@@ -37,7 +37,7 @@ func ramanujanNumber(aCandidate, bCandidate int, ramanujanPair propcheck.Pair[in
 	return ramanujanNumber(aCandidate, bCandidate+1, ramanujanPair, maybeRamanujanNumber)
 }
 
-func findAPair(maybeRamanujanNumber int, ramanujanPair propcheck.Pair[int, int]) option.Option[propcheck.Pair[int, int]] {
+func findAPFirdtair(maybeRamanujanNumber int, ramanujanPair propcheck.Pair[int, int]) option.Option[propcheck.Pair[int, int]] {
 	for i := 0; i <= maybeRamanujanNumber; i++ {
 		b := ramanujanNumber(i, i+1, ramanujanPair, maybeRamanujanNumber)
 		switch v := b.(type) {
@@ -50,26 +50,56 @@ func findAPair(maybeRamanujanNumber int, ramanujanPair propcheck.Pair[int, int])
 	return option.None[propcheck.Pair[int, int]]{}
 }
 
-func TestIsRamanujanNumber(t *testing.T) {
-	aa := func(x propcheck.Pair[int, int]) option.Option[propcheck.Pair[int, int]] {
-		return findAPair(1729, x)
-	}
-	verify := func(actual option.Option[propcheck.Pair[int, int]], expected propcheck.Pair[int, int]) {
-		switch v := actual.(type) {
-		case option.None[propcheck.Pair[int, int]]:
-			t.Errorf("unexpected none")
-		case option.Some[propcheck.Pair[int, int]]:
-			if !(v.Value.A == expected.A && v.Value.B == expected.B) {
-				t.Errorf("expected%v but got %v", expected, v)
+type RamanujanPair struct {
+	A int
+	B int
+	C int
+	D int
+}
+
+func FindBothPairs(maybeRamanujanNumber int) option.Option[RamanujanPair] {
+	f := func(p1 propcheck.Pair[int, int]) option.Option[RamanujanPair] {
+		p2 := findAPair(maybeRamanujanNumber, p1)
+		r := RamanujanPair{
+			A: p1.A,
+			B: p1.B,
+		}
+		return option.Map(p2, func(x propcheck.Pair[int, int]) RamanujanPair {
+			return RamanujanPair{
+				A: r.A,
+				B: r.B,
+				C: x.A,
+				D: x.B,
 			}
+		})
+	}
+	ramanujanPair1 := findAPair(maybeRamanujanNumber, propcheck.Pair[int, int]{})
+	return option.FlatMap[propcheck.Pair[int, int]](ramanujanPair1, f)
+}
+
+func TestIsRamanujanNumber2(t *testing.T) {
+	for x := 1; x < 100000; x++ {
+		steps2 = 0
+		actual := FindBothPairs(x)
+		switch v := actual.(type) {
+		case option.None[RamanujanPair]:
+		case option.Some[RamanujanPair]:
+			if x == 1729 {
+				fmt.Printf("actual:%v steps:%v\n", actual, steps2)
+				if !(v.Value.A == 1 && v.Value.B == 12 && v.Value.C == 9 && v.Value.D == 10) {
+					t.Errorf("expected{{1 12 9 10}} for %v but got %v and took %v steps", x, v, steps2)
+				}
+			} else if x == 4104 {
+				fmt.Printf("actual:%v steps:%v\n", actual, steps2)
+				if !(v.Value.A == 2 && v.Value.B == 16 && v.Value.C == 9 && v.Value.D == 15) {
+					t.Errorf("expected{{2, 16, 9, 15}} for %v but got %v and took %v steps", x, v, steps2)
+				}
+			} else {
+				t.Errorf("unexpected Ramanujan number %v with cube roots%v and steps:%v", x, v, steps2)
+			}
+
 		default:
 			t.Errorf("unexpected failure")
 		}
-
 	}
-	ramanujanPair1 := findAPair(1729, propcheck.Pair[int, int]{})
-	ramanujanPair2 := option.FlatMap[propcheck.Pair[int, int]](ramanujanPair1, aa)
-	verify(ramanujanPair1, propcheck.Pair[int, int]{1, 12})
-	verify(ramanujanPair2, propcheck.Pair[int, int]{9, 10})
-	fmt.Printf("steps%v\n", steps2)
 }
