@@ -83,6 +83,7 @@ func TestIsRamanujanNumber2(t *testing.T) {
 		actual := FindBothPairs(x)
 		switch v := actual.(type) {
 		case option.None[RamanujanPair]:
+			fmt.Printf("not a Ramanujan number:%v  in %v steps\n", x, steps2)
 		case option.Some[RamanujanPair]:
 			if x == 1729 {
 				fmt.Printf("actual:%v steps:%v\n", actual, steps2)
