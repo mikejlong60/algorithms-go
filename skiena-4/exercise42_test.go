@@ -57,7 +57,7 @@ type RamanujanPair struct {
 	D int
 }
 
-func FindBothPairs(maybeRamanujanNumber int) option.Option[RamanujanPair] {
+func IsRamanujanNumber(maybeRamanujanNumber int) option.Option[RamanujanPair] {
 	f := func(p1 propcheck.Pair[int, int]) option.Option[RamanujanPair] {
 		p2 := findAPair(maybeRamanujanNumber, p1)
 		r := RamanujanPair{
@@ -77,13 +77,13 @@ func FindBothPairs(maybeRamanujanNumber int) option.Option[RamanujanPair] {
 	return option.FlatMap[propcheck.Pair[int, int]](ramanujanPair1, f)
 }
 
-func TestIsRamanujanNumber2(t *testing.T) {
+func TestIsRamanujanNumber(t *testing.T) {
 	for x := 1; x < 200000; x++ {
 		steps2 = 0
-		actual := FindBothPairs(x)
+		actual := IsRamanujanNumber(x)
 		switch v := actual.(type) {
 		case option.None[RamanujanPair]:
-			fmt.Printf("not a Ramanujan number:%v  in %v steps\n", x, steps2)
+			//fmt.Printf("not a Ramanujan number:%v  in %v steps\n", x, steps2)
 		case option.Some[RamanujanPair]:
 			if x == 1729 {
 				fmt.Printf("actual:%v steps:%v\n", actual, steps2)
@@ -91,7 +91,7 @@ func TestIsRamanujanNumber2(t *testing.T) {
 					t.Errorf("expected{{1 12 9 10}} for %v but got %v and took %v steps", x, v, steps2)
 				}
 			} else if x == 4104 {
-				fmt.Printf("actual:%v steps:%v\n", actual, steps2)
+				//fmt.Printf("actual:%v steps:%v\n", actual, steps2)
 				if !(v.Value.A == 2 && v.Value.B == 16 && v.Value.C == 9 && v.Value.D == 15) {
 					t.Errorf("expected{{2, 16, 9, 15}} for %v but got %v and took %v steps", x, v, steps2)
 				}
